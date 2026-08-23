@@ -38,7 +38,7 @@ NumarkPartyMix3.PadModeControls = {
     HOTCUE: 0x00,
     LOOP: 0x0B,
     SAMPLER: 0x0E,
-    EFX: 0x18,
+    STEM: 0x18,
 };
 
 NumarkPartyMix3.initBackgroundLeds = function() {
@@ -491,15 +491,15 @@ NumarkPartyMix3.PadSection = function(deckNumber) {
         new NumarkPartyMix3.ModeLoop(deckNumber);
     this.modes[NumarkPartyMix3.PadModeControls.SAMPLER] =
         new NumarkPartyMix3.ModeSampler(deckNumber);
-    this.modes[NumarkPartyMix3.PadModeControls.EFX] =
-        new NumarkPartyMix3.ModeEFX(deckNumber);
+    this.modes[NumarkPartyMix3.PadModeControls.STEM] =
+        new NumarkPartyMix3.ModeStem(deckNumber);
 
     // Order used when pressing the single MODE button
     this.modeOrder = [
         NumarkPartyMix3.PadModeControls.HOTCUE,
         NumarkPartyMix3.PadModeControls.LOOP,
         NumarkPartyMix3.PadModeControls.SAMPLER,
-        NumarkPartyMix3.PadModeControls.EFX
+        NumarkPartyMix3.PadModeControls.STEM
     ];
 
     this.modeIndex = 0;
@@ -537,7 +537,7 @@ NumarkPartyMix3.PadSection = function(deckNumber) {
             ledNote = 3;
             break;
 
-        case NumarkPartyMix3.PadModeControls.EFX:
+        case NumarkPartyMix3.PadModeControls.STEM:
             ledNote = 4;
             break;
         }
@@ -555,7 +555,7 @@ this.modeButtonPress = function(_channel, _control, value) {
     // If currently in a "rare" mode, go straight back to HOTCUE
     if (
         this.currentMode.control === NumarkPartyMix3.PadModeControls.SAMPLER ||
-        this.currentMode.control === NumarkPartyMix3.PadModeControls.EFX
+        this.currentMode.control === NumarkPartyMix3.PadModeControls.STEM
     ) {
         this.modeIndex = 0;
         this.setMode(NumarkPartyMix3.PadModeControls.HOTCUE);
@@ -589,7 +589,7 @@ this.stemModeButton = function(_channel, _control, value) {
     }
 
     this.modeIndex = 0;
-    this.setMode(NumarkPartyMix3.PadModeControls.EFX);
+    this.setMode(NumarkPartyMix3.PadModeControls.STEM);
 };
 
 
@@ -900,35 +900,87 @@ NumarkPartyMix3.ModeSampler = function(deckNumber) {
 NumarkPartyMix3.ModeSampler.prototype =
     Object.create(components.ComponentContainer.prototype);
 
-NumarkPartyMix3.ModeEFX = function(deckNumber) {
+NumarkPartyMix3.ModeStem = function(deckNumber) {
     components.ComponentContainer.call(this);
 
-    this.control = NumarkPartyMix3.PadModeControls.EFX;
-
+    this.control = NumarkPartyMix3.PadModeControls.STEM;
     this.connections = new components.ComponentContainer();
 
-    // Pad 1..4 = toggle FX Unit 1..4 routing to this deck
+    const midiChannel = 0x93 + deckNumber;
+    const stemGroups = [
+        `[Channel${deckNumber}_Stem1]`, // Drums
+        `[Channel${deckNumber}_Stem2]`, // Bass
+        `[Channel${deckNumber}_Stem3]`, // Other
+        `[Channel${deckNumber}_Stem4]`  // Vox
+    ];
+
+    function setPadLed(padIndex, on) {
+        midi.sendShortMsg(midiChannel, 0x14 + padIndex, on ? 0x7F : 0x01);
+    }
+
+    function updateLeds() {
+        // Pads 1-4: stem enabled/muted state
+        for (let i = 0; i < 4; i++) {
+            setPadLed(i, engine.getValue(stemGroups[i], "volume") > 0.001);
+        }
+
+        // Pads 5-8: light only when that stem is currently soloed
+        let enabled = [];
+        for (let i = 0; i < 4; i++) {
+            enabled[i] = engine.getValue(stemGroups[i], "volume") > 0.001;
+        }
+        const enabledCount = enabled.filter(Boolean).length;
+        for (let i = 0; i < 4; i++) {
+            setPadLed(4 + i, enabledCount === 1 && enabled[i]);
+        }
+    }
+
+    // Pads 1-4: toggle Drums, Bass, Other, Vox
     for (let i = 0; i < 4; i++) {
-        const fxUnit = i + 1;
-
         this.connections[i] = new components.Button({
-            group: `[EffectRack1_EffectUnit${fxUnit}]`,
-            key: `group_[Channel${deckNumber}]_enable`,
-
-            midi: [
-                0x93 + deckNumber,
-                0x14 + i
-            ],
-
-            type: components.Button.prototype.types.toggle,
-
-            // LED follows routing state
+            midi: [midiChannel, 0x14 + i],
+            input: function(channel, control, value, status) {
+                if ((status & 0xF0) !== 0x90 || value === 0) {
+                    return;
+                }
+                const current = engine.getValue(stemGroups[i], "volume");
+                engine.setValue(stemGroups[i], "volume", current > 0.001 ? 0.0 : 1.0);
+                updateLeds();
+            },
             outConnect: false
         });
     }
+
+    // Pads 5-8: solo Drums, Bass, Other, Vox.
+    // Press the active SOLO pad again to restore all four stems.
+    for (let i = 0; i < 4; i++) {
+        this.connections[4 + i] = new components.Button({
+            midi: [midiChannel, 0x18 + i],
+            input: function(channel, control, value, status) {
+                if ((status & 0xF0) !== 0x90 || value === 0) {
+                    return;
+                }
+
+                let enabled = [];
+                for (let j = 0; j < 4; j++) {
+                    enabled[j] = engine.getValue(stemGroups[j], "volume") > 0.001;
+                }
+                const alreadySolo = enabled[i] && enabled.filter(Boolean).length === 1;
+
+                for (let j = 0; j < 4; j++) {
+                    engine.setValue(stemGroups[j], "volume", alreadySolo || j === i ? 1.0 : 0.0);
+                }
+                updateLeds();
+            },
+            outConnect: false
+        });
+    }
+
+    // Refresh pad LEDs whenever this mode is entered.
+    this.trigger = updateLeds;
 };
 
-NumarkPartyMix3.ModeEFX.prototype =
+NumarkPartyMix3.ModeStem.prototype =
     Object.create(components.ComponentContainer.prototype);
 
 NumarkPartyMix3.Browse = function() {
