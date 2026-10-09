@@ -1,11 +1,10 @@
+// Izo v3: cue hold-to-clear plus custom eight-pad Loop mode.
 // eslint-disable-next-line no-var
 var NumarkPartyMix3 = {};
 
-// The jogwheel is behaving inconsistently
-// when scratching the point in the song moves
-// this is according to my theory because
-// the movements are not properly registered by the encoder
-// (this can happen when the sampling rate of the sensor is too low)
+// Touch-sensitive jog wheels: hold/scratch the top, nudge with the rim.
+NumarkPartyMix3.hotcueHoldToClearMs = 1000;
+
 NumarkPartyMix3.jogScratchSensitivity = 340;
 NumarkPartyMix3.jogScratchAlpha = 1 / 8; // do NOT set to 2 or higher
 NumarkPartyMix3.jogScratchBeta = 1 / 8 / 32;
@@ -170,7 +169,7 @@ NumarkPartyMix3.Deck = function(deckNumber) {
 
     const channel = deckNumber - 1;
     const deck = this;
-    this.scratchModeEnabled = false;
+    this.jogTouched = false;
 
     this.playButton = new components.PlayButton({
         midi: [0x90 + channel, 0x00],
@@ -226,16 +225,23 @@ NumarkPartyMix3.Deck = function(deckNumber) {
 
     this.padSection = new NumarkPartyMix3.PadSection(deckNumber);
 
-    this.scratchToggle = new components.Button({
-        midi: [0x90 + channel, 0x07],
-        type: components.Button.prototype.types.toggle,
-        inToggle: function() {
-            deck.scratchModeEnabled = !deck.scratchModeEnabled;
-            if (deck.scratchModeEnabled) {
-                this.send(this.on);
+    // Note 0x50 is the capacitive touch sensor. No movement timeout:
+    // a stationary finger must keep holding the deck until release.
+    this.wheelTouch = new components.Button({
+        input: function(channel, control, value, status, group) {
+            const touched = (status & 0xF0) === 0x90 && value > 0;
+            if (touched === deck.jogTouched) {
+                return;
+            }
+            deck.jogTouched = touched;
+            if (touched) {
+                engine.scratchEnable(deckNumber,
+                    NumarkPartyMix3.jogScratchSensitivity, 33 + 1 / 3,
+                    NumarkPartyMix3.jogScratchAlpha,
+                    NumarkPartyMix3.jogScratchBeta, false);
             } else {
-                engine.scratchDisable(deckNumber);
-                this.send(this.off);
+                // Release immediately; preserve the deck's play/pause state.
+                engine.scratchDisable(deckNumber, false);
             }
         }
     });
@@ -243,35 +249,16 @@ NumarkPartyMix3.Deck = function(deckNumber) {
     this.wheelTurn = new components.Encoder({
         group: "[Channel" + deckNumber + "]",
         key: "wheelTurn",
-        touchTimer: 0,
-        touchTimout: 0,
         input: function(channel, _control, value, _status, group) {
-            //clockwise (slow-fast) 0x01 - 0x06
-            //counter-clockwise (slow-fast) 0x7F - 0x7A
-            //transform counter-clockwise messages to negative values
-            var newValue = (value < 0x40) ? value : (value - 0x80);
-
-            if (this.touchTimer !== 0) {
-                engine.stopTimer(this.touchTimer);
-                this.touchTimer = 0;
-            }
-
-            if (deck.scratchModeEnabled) {
-                this.touchTimer = engine.beginTimer(50, () => {
-                    engine.scratchDisable(deckNumber);
-                }, true);
-
-                if (!engine.isScratching(deckNumber)) {
-                    engine.scratchEnable(deckNumber, NumarkPartyMix3.jogScratchSensitivity, 33 + 1 / 3, NumarkPartyMix3.jogScratchAlpha, NumarkPartyMix3.jogScratchBeta, true);
-                }
-                engine.scratchTick(deckNumber, newValue); // Scratch!
+            const newValue = value < 0x40 ? value : value - 0x80;
+            if (deck.jogTouched) {
+                engine.scratchTick(deckNumber, newValue);
+            } else if (engine.getValue(group, "play") > 0) {
+                engine.setValue(group, "jog",
+                    newValue / NumarkPartyMix3.jogPitchSensitivity);
             } else {
-                if (engine.getValue(group, "play") > 0) {
-                    engine.setValue(group, "jog", newValue / NumarkPartyMix3.jogPitchSensitivity); // fine jog to sync
-                } else {
-                    engine.setValue(group, "jog", newValue / NumarkPartyMix3.jogSearchSensitivity); // scrup through track
-
-                }
+                engine.setValue(group, "jog",
+                    newValue / NumarkPartyMix3.jogSearchSensitivity);
             }
         }
     });
@@ -665,6 +652,68 @@ this.shiftPadPress = function(channel, control, value, status, group) {
 
 NumarkPartyMix3.PadSection.prototype = Object.create(components.ComponentContainer.prototype);
 
+// Keep the normal immediate hotcue action; a sustained press clears it.
+NumarkPartyMix3.enableCueHoldToClear = function(button, clearKey) {
+    const normalInput = button.input;
+    const normalDisconnect = button.disconnect;
+    const normalShutdown = button.shutdown;
+    let timer = 0;
+    let heldArgs = null;
+    let physicallyHeld = false;
+    let trackConnection = null;
+
+    const cancel = function() {
+        if (timer !== 0) {
+            engine.stopTimer(timer);
+            timer = 0;
+        }
+        if (trackConnection !== null) {
+            trackConnection.disconnect();
+            trackConnection = null;
+        }
+        if (heldArgs !== null) {
+            const args = heldArgs;
+            heldArgs = null;
+            // Release temporary cue playback before clearing or leaving the mode.
+            normalInput.call(button, args[0], args[1], 0,
+                (args[3] & 0x0F) | 0x80, args[4]);
+        }
+    };
+
+    button.input = function(channel, control, value, status, group) {
+        const pressed = (status & 0xF0) === 0x90 && value > 0;
+        if (!pressed) {
+            physicallyHeld = false;
+            cancel();
+            return;
+        }
+        if (physicallyHeld) {
+            return; // Ignore duplicate Note On, including after the cue was cleared.
+        }
+        physicallyHeld = true;
+        heldArgs = [channel, control, value, status, group];
+        normalInput.apply(button, heldArgs);
+        // Loading/unloading a track must not clear a cue in the next track.
+        trackConnection = engine.makeConnection(button.group, "track_loaded", cancel);
+        timer = engine.beginTimer(NumarkPartyMix3.hotcueHoldToClearMs, function() {
+            timer = 0;
+            cancel();
+            engine.setValue(button.group, clearKey, 1);
+            engine.setValue(button.group, clearKey, 0);
+        }, true);
+    };
+    button.disconnect = function() {
+        physicallyHeld = false;
+        cancel();
+        return normalDisconnect.apply(button, arguments);
+    };
+    button.shutdown = function() {
+        physicallyHeld = false;
+        cancel();
+        return normalShutdown.apply(button, arguments);
+    };
+};
+
 NumarkPartyMix3.ModeHotcue = function(deckNumber) {
     components.ComponentContainer.call(this);
 
@@ -682,6 +731,7 @@ NumarkPartyMix3.ModeHotcue = function(deckNumber) {
             number: i + 1,
             outConnect: false
         });
+        NumarkPartyMix3.enableCueHoldToClear(this.connections[i], "hotcue_" + (i + 1) + "_clear");
     }
 
     // Pad 5 = Intro Start
@@ -719,6 +769,13 @@ NumarkPartyMix3.ModeHotcue = function(deckNumber) {
         outKey: "outro_end_enabled",
         outConnect: false
     });
+    const markerClearKeys = [
+        "intro_start_clear", "intro_end_clear", "outro_start_clear", "outro_end_clear"
+    ];
+    for (let i = 4; i < 8; i++) {
+        NumarkPartyMix3.enableCueHoldToClear(this.connections[i], markerClearKeys[i - 4]);
+    }
+
     //shift pad 
 	this.shiftPadPress = function(i, group) {
 	    if (i >= 0 && i < 4) {
@@ -737,107 +794,67 @@ NumarkPartyMix3.ModeHotcue.prototype =
 
 NumarkPartyMix3.ModeLoop = function(deckNumber) {
     components.ComponentContainer.call(this);
-
     this.control = NumarkPartyMix3.PadModeControls.LOOP;
-
     const group = `[Channel${deckNumber}]`;
     const midiChannel = 0x93 + deckNumber;
-
     this.connections = new components.ComponentContainer();
+    const fxGroup = "[EffectRack1_EffectUnit1]";
+    const fxKey = "group_" + group + "_enable";
 
-    // PAD 1: halve loop size
-    this.connections[0] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x14],
-        inKey: "loop_halve",
-        outConnect: false
-    });
-
-    // PAD 2: double loop size
-    this.connections[1] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x15],
-        inKey: "loop_double",
-        outConnect: false
-    });
-
-    // PAD 3: create current-size loop / exit active loop
-    this.connections[2] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x16],
-        outKey: "loop_enabled",
-        outConnect: false,
-
-        input: function(channel, control, value, status) {
-            if (!this.isPress(channel, control, value, status)) {
-                return;
-            }
-
-            if (engine.getValue(group, "loop_enabled")) {
-                // Exit current loop
+    // One action per Note On; ignore Note Off even with nonzero velocity.
+    const pulse = function(key) {
+        engine.setValue(group, key, 1);
+        engine.setValue(group, key, 0);
+    };
+    const actions = [
+        function() { pulse("beatloop_8_activate"); },
+        function() {
+            // PAD 2: exit an active loop, otherwise return to the last loop.
+            if (engine.getValue(group, "loop_enabled") > 0) {
                 engine.setValue(group, "loop_enabled", 0);
             } else {
-                // Create a new loop using beatloop_size
-                engine.setValue(group, "beatloop_activate", 1);
+                const start = engine.getValue(group, "loop_start_position");
+                const end = engine.getValue(group, "loop_end_position");
+                if (start >= 0 && end > start) {
+                    engine.setValue(group, "loop_enabled", 1);
+                    pulse("loop_in_goto");
+                }
             }
-        }
-    });
-
-    // PAD 4: RELOOP
-    //
-    // Re-enable the previous loop. Mixxx will return to it as
-    // appropriate according to reloop_toggle semantics.
-    this.connections[3] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x17],
-        inKey: "reloop_toggle",
-        outConnect: false
-    });
-
-    // PAD 5: fixed 1 beat loop
-    this.connections[4] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x18],
-        inKey: "beatloop_1_toggle",
-        outKey: "beatloop_1_enabled",
-        outConnect: false
-    });
-
-    // PAD 6: fixed 2 beat loop
-    this.connections[5] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x19],
-        inKey: "beatloop_2_toggle",
-        outKey: "beatloop_2_enabled",
-        outConnect: false
-    });
-
-    // PAD 7: fixed 4 beat loop
-    this.connections[6] = new components.Button({
-        group: group,
-        midi: [midiChannel, 0x1A],
-        inKey: "beatloop_4_toggle",
-        outKey: "beatloop_4_enabled",
-        outConnect: false
-    });
-
-    // PAD 8: fixed 8 beat loop
-    //this.connections[7] = new components.Button({
-    //    group: group,
-    //    midi: [midiChannel, 0x1B],
-    //    inKey: "beatloop_8_toggle",
-    //    outKey: "beatloop_8_enabled",
-    //    outConnect: false
-    //});
-
-	// PAD 8: toggle FX1 routing to this deck
-	this.connections[7] = new components.Button({
-	    group: "[EffectRack1_EffectUnit1]",
-	    midi: [midiChannel, 0x1B],
-	    key: `group_[Channel${deckNumber}]_enable`,
-	    type: components.Button.prototype.types.toggle,
-	    outConnect: false
-	});
+        },
+        function() {
+            engine.setValue(group, "loop_enabled", 0);
+            // Do not create a new Intro Start marker when it is missing.
+            // intro_start_activate seeks without changing play/pause state.
+            if (engine.getValue(group, "intro_start_enabled") > 0) {
+                pulse("intro_start_activate");
+            }
+        },
+        function() {
+            engine.setValue(fxGroup, fxKey, engine.getValue(fxGroup, fxKey) > 0 ? 0 : 1);
+        },
+        function() { pulse("loop_halve"); },
+        function() { pulse("loop_double"); },
+        function() { pulse("loop_move_1_backward"); },
+        function() { pulse("loop_move_1_forward"); }
+    ];
+    const feedback = [
+        "beatloop_8_enabled", "loop_enabled", "intro_start_enabled",
+        fxKey, "loop_enabled", "loop_enabled",
+        "loop_enabled", "loop_enabled"
+    ];
+    for (let i = 0; i < 8; i++) {
+        this.connections[i] = new components.Button({
+            group: i === 3 ? fxGroup : group,
+            midi: [midiChannel, 0x14 + i],
+            outKey: feedback[i],
+            outConnect: false,
+            input: function(channel, control, value, status) {
+                if ((status & 0xF0) === 0x90 && value > 0) {
+                    actions[i]();
+                }
+            }
+        });
+    }
 };
 
 NumarkPartyMix3.ModeLoop.prototype =
@@ -1029,7 +1046,14 @@ NumarkPartyMix3.Browse = function() {
             }
         },
         inToggle: function() {
-            engine.setParameter("[Library]", "GoToItem", 1);
+            // Short press of Browse knob: toggle focus directly
+            // between the library tree/crates (2) and tracks table (3).
+            const focusedWidget = engine.getValue("[Library]", "focused_widget");
+            if (focusedWidget === 2) {
+                engine.setValue("[Library]", "focused_widget", 3);
+            } else {
+                engine.setValue("[Library]", "focused_widget", 2);
+            }
         }
     });
 };

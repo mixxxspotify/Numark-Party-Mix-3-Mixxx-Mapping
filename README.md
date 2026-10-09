@@ -1,428 +1,328 @@
-# Numark Party Mix III – Opinionated Mixxx Mapping
+# Numark Party Mix III — Mixxx Mapping
 
-An enhanced and highly opinionated [Mixxx](https://mixxx.org/) mapping for the **Numark Party Mix III / Party Mix MK3**.
+A guide to using the **Numark Party Mix III with Mixxx**: playing and mixing tracks, browsing your library, using cues and loops, triggering samples, controlling stems, and managing AutoDJ - a bit opinionated
 
-The goal of this mapping is **not** to reproduce the controller's original Serato/djay behavior as closely as possible.
+## Contents
 
-Instead, it turns the inexpensive Party Mix III into a surprisingly capable controller for:
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Decks, pads, and Shift](#decks-pads-and-shift)
+- [Playback and jog wheels](#playback-and-jog-wheels)
+- [Mixer and headphones](#mixer-and-headphones)
+- [Browsing and loading tracks](#browsing-and-loading-tracks)
+- [Choosing a pad mode](#choosing-a-pad-mode)
+- [Hot Cue mode](#hot-cue-mode)
+- [Loop mode](#loop-mode)
+- [Sampler mode](#sampler-mode)
+- [Stem mode](#stem-mode)
+- [Acapella and Instrumental](#acapella-and-instrumental)
+- [AutoDJ](#autodj)
+- [Button lights](#button-lights)
+- [Troubleshooting](#troubleshooting)
 
-- Two-deck DJing
-- Pop/rock and party music
-- Mixxx stems
-- AutoDJ-assisted parties
-- Loops and hot cues
-- Samples
-- Quick FX access
+## Installation
 
-The mapping deliberately repurposes several controls where I found the original behavior less useful.
+You need both mapping files:
+
+- `Numark-Party-Mix3.midi.xml`
+- `Numark-Party-Mix3.scripts.js`
 
----
+1. Connect the Party Mix III to your computer by USB.
+2. In Mixxx, open **Preferences → Controllers → Open User Mapping Folder**.
+3. Copy both files into that folder. Keep their names unchanged. If the script download ends in `.js.txt`, remove the final `.txt`.
+4. Restart Mixxx if the mapping is not listed.
+5. In **Preferences → Controllers**, select your Party Mix III and choose this custom mapping.
+6. Check **Enabled** and click **Apply**.
+7. In **Preferences → Sound Hardware**, select the outputs for your speakers and headphones. You can use the controller's audio device or a separate audio interface.
 
-## Design philosophy
+For stem controls, use a Mixxx version and tracks that support four separate stems. To use every sampler pad, configure **16 sampler slots** in Mixxx.
 
-The Party Mix III has relatively few physical controls, so this mapping treats every button as valuable real estate.
+## Quick start
 
-The main principles are:
+1. Turn **BROWSE** to select a track. Briefly press it to switch between your library folders/crates and the track list.
+2. With AutoDJ off, press the left or right **LOAD** button to load the corresponding deck.
+3. Press that deck's headphone **PFL/CUE** button to preview it in headphones.
+4. Press **PLAY/PAUSE**. Adjust the channel fader, main volume, and crossfader.
+5. Both decks start in **Hot Cue** mode. Tap pads 1–4 to save or use hot cues.
+6. Tap **MODE** to enter **Loop** mode. Pad 1 starts an 8-beat loop; pad 2 exits it or returns to it.
 
-- **Hot Cue and Loop are the primary pad modes**
-- Rarely used modes should not get in the way
-- Hardware Shift combinations should expose additional functionality
-- Mixxx stems should be usable directly from the controller
-- AutoDJ should be genuinely useful during unattended/semi-attended party playback
-- Controller LEDs should reflect the actual Mixxx state wherever possible
-- Common actions should require as few button presses as possible
+**Two things to remember:** holding a pad for one second in Hot Cue mode deletes its cue or marker. **FADE FX** switches AutoDJ on/off, which also changes what the LOAD buttons do.
 
-As a result, this mapping is intentionally different from the stock Numark behavior.
+## Decks, pads, and Shift
 
----
+The left side controls **Deck 1**, and the right side controls **Deck 2**. Each side has its own pad mode.
 
-# Pad Modes
+Throughout this guide, pads are numbered separately on each deck:
 
-The eight performance pads support four modes:
+| Row | Left to right |
+| --- | --- |
+| Top | 1, 2, 3, 4 |
+| Bottom | 5, 6, 7, 8 |
 
-- Hot Cue
-- Loop
-- Sampler
-- Stems
+The same instructions apply to both decks unless stated otherwise.
 
-However, **MODE does not cycle through all four modes**.
+**Shift means holding the MODE button for a longer press.** For a Shift combination, hold MODE, press the other button while still holding MODE, then release. A brief tap of MODE changes the pad mode instead.
 
-## MODE button
+## Playback and jog wheels
 
-Normal MODE presses toggle only between the two most frequently used modes:
+| Control | What it does |
+| --- | --- |
+| PLAY/PAUSE | Starts or pauses the track. |
+| CUE | Uses Mixxx's main cue point. Typically, press while paused to set the cue, or during playback to return to it. The exact behavior follows your Mixxx cue-mode setting. |
+| SYNC | Synchronizes the track's tempo and, depending on Mixxx settings, beat alignment with the other deck. |
+| Pitch fader | Changes the track's speed and BPM. The adjustment range is set in Mixxx. |
+| Touch and hold the jog wheel's top | Holds the audio under your finger, even if you stop moving the wheel. |
+| Touch and turn the jog wheel's top | Scratches forwards or backwards. Works while playing or paused. |
+| Release the jog wheel's top | Releases the hold. A playing track continues; a paused track remains paused. |
+| Turn the rim while playing | Temporarily speeds up or slows down the track to align beats. |
+| Turn the rim while paused | Moves through the track to find a position. |
 
-```text
-HOT CUE → LOOP → HOT CUE → LOOP → ...
-```
+Touch the top to scratch; use the rim to nudge. There is no separate vinyl-mode button to enable first.
 
-This avoids having to cycle through Sampler and Stems every time you want to switch between Hot Cues and Loops.
+The main **CUE** button, the **Hot Cue pads**, and the headphone **PFL/CUE** buttons serve different purposes: a main cue point, multiple saved jump points, and headphone monitoring respectively.
 
-The less frequently used modes have dedicated shortcuts:
+## Mixer and headphones
 
-```text
-MODE + ACAPELLA       → Sampler mode
-MODE + INSTRUMENTAL   → Stems mode
-```
+| Control | What it does |
+| --- | --- |
+| Channel fader | Adjusts that deck's volume. |
+| HIGH EQ | Adjusts treble. |
+| MID EQ | Adjusts midrange. |
+| LOW EQ | Adjusts bass. |
+| FILTER | Adjusts the deck's selected Quick Effect in Mixxx, normally a filter. |
+| Crossfader | Blends between the decks according to your Mixxx crossfader settings. |
+| MAIN GAIN | Adjusts the main output volume. |
+| CUE LEVEL | Adjusts headphone volume. |
+| Headphone PFL/CUE | Toggles that deck's headphone preview. Each deck switches independently, so both can be monitored together. |
 
-After entering Sampler or Stems mode:
+Headphone preview lets you prepare a track before raising its channel fader for the audience. Adjust the headphone cue/main blend and individual track gain in Mixxx when needed.
 
-```text
-MODE → Hot Cue mode
-```
+The FILTER knob's sound depends on the Quick Effect selected in Mixxx. EQ behavior follows your chosen equalizer.
 
-This makes **Hot Cue the "home" pad mode**.
+## Browsing and loading tracks
 
----
+| Action | Result |
+| --- | --- |
+| Turn BROWSE | Moves up or down in the selected library area. |
+| Briefly press and release BROWSE | Switches between folders/crates and the track list. |
+| Hold BROWSE and turn | Moves between library areas instead of scrolling the current list. |
+| Hold BROWSE, then release | Does not perform the short-click switch if held long enough. |
+| Left LOAD with AutoDJ off | Loads the selected track into Deck 1. |
+| Right LOAD with AutoDJ off | Loads the selected track into Deck 2. |
+| Left LOAD with AutoDJ on | Adds the selected track to the **top** of the AutoDJ queue. |
+| Right LOAD with AutoDJ on | Adds the selected track to the **bottom** of the AutoDJ queue. |
 
-# Hardware Shift Layer
+The short Browse click takes effect when you release the knob. If you press, turn, and release very quickly, it can also switch library areas on release.
 
-An interesting feature of the Party Mix III is that MODE also acts as a hardware Shift modifier.
+Mixxx's normal protection against loading a track into a playing deck still applies, according to your preferences.
 
-The controller itself generates different MIDI notes for shifted pads:
+## Choosing a pad mode
 
-```text
-Normal pads:       0x14 – 0x1B
-MODE + pads:       0x1C – 0x23
-```
+| Action | Result |
+| --- | --- |
+| Tap MODE while in Hot Cue mode | Switches to Loop mode. |
+| Tap MODE while in Loop mode | Switches to Hot Cue mode. |
+| **Shift + ACAPELLA** | Enters Sampler mode. |
+| **Shift + INSTRUMENTAL** | Enters Stem mode. |
+| Tap MODE while in Sampler or Stem mode | Returns to Hot Cue mode. |
 
-This mapping uses the controller's native shifted MIDI layer rather than implementing timing-based or simulated Shift behavior in JavaScript.
+For example, to enter Sampler mode, **hold MODE, press ACAPELLA, then release**.
 
-This makes shifted actions deterministic and reliable.
+MODE alternates between **Hot Cue and Loop**. Use the Shift combinations to reach Sampler and Stem directly.
 
----
+The mode lights indicate Hot Cue, Loop, Sampler, or Stem. **The EFX indicator is used for Stem mode in this mapping.**
 
-# Hot Cue Mode
+Changing pad mode only changes what the pads do. It does not stop a playing sample, exit a loop, turn off effects, or restore muted stems.
 
-The first four pads provide the normal Hot Cue functions:
+## Hot Cue mode
 
-| Pad | Function |
-|---|---|
-| 1 | Hot Cue 1 |
-| 2 | Hot Cue 2 |
-| 3 | Hot Cue 3 |
-| 4 | Hot Cue 4 |
-| 5 | Intro Start |
-| 6 | Intro End |
-| 7 | Outro Start |
-| 8 | Outro End |
+This is the starting mode on both decks.
 
-The second row is deliberately repurposed for Mixxx track markers.
+| Pad | Brief press | Hold for 1 second |
+| --- | --- | --- |
+| 1 | Set or activate Hot Cue 1 | Delete Hot Cue 1 |
+| 2 | Set or activate Hot Cue 2 | Delete Hot Cue 2 |
+| 3 | Set or activate Hot Cue 3 | Delete Hot Cue 3 |
+| 4 | Set or activate Hot Cue 4 | Delete Hot Cue 4 |
+| 5 | Set or jump to Intro Start | Delete Intro Start |
+| 6 | Set or jump to Intro End | Delete Intro End |
+| 7 | Set or jump to Outro Start | Delete Outro Start |
+| 8 | Set or jump to Outro End | Delete Outro End |
 
-This is particularly useful when preparing tracks for AutoDJ and structured transitions.
+### Using hot cues
 
-## Delete Hot Cues
+A hot cue is a saved position in a track, such as the first beat, a chorus, or a useful transition point.
 
-Holding MODE exposes the shifted pad layer:
+- If a pad has no cue, press it to save the current position.
+- If a cue already exists, press the pad during playback to jump to it.
+- While paused, an existing hot cue can be held for a brief preview using Mixxx's normal hot-cue behavior. Release before one second if you want to keep it.
+- **Shift + pads 1–4** clears the corresponding hot cue while in Hot Cue mode. Shift + pads 5–8 has no assigned action.
 
-| Combination | Function |
-|---|---|
-| MODE + Pad 1 | Delete Hot Cue 1 |
-| MODE + Pad 2 | Delete Hot Cue 2 |
-| MODE + Pad 3 | Delete Hot Cue 3 |
-| MODE + Pad 4 | Delete Hot Cue 4 |
+### Intro and outro markers
 
-This provides a quick way to delete cue points directly from the controller without using the mouse.
+Pads 5–8 mark the start and end of the intro and outro sections. They are separate from Hot Cues 1–4.
 
----
+Press a marker pad to set it at the current position if it is missing. If it already exists, the pad jumps to it without changing whether the track is playing or paused.
 
-# Loop Mode
+To move a marker, delete it, find the new position, then tap its pad again. Mixxx can also use these markers for AutoDJ transitions, depending on your AutoDJ settings.
 
-Loop mode is designed around quick loop manipulation:
+### Deleting with a long press
 
-| Pad | Function |
-|---|---|
-| 1 | Halve current loop size |
-| 2 | Double current loop size |
-| 3 | Activate current-size loop / exit loop |
-| 4 | Reloop |
-| 5 | 1-beat loop |
-| 6 | 2-beat loop |
-| 7 | 4-beat loop |
-| 8 | Toggle FX Unit 1 for this deck |
+Hold any pad in this mode for **one second** to delete its cue or marker.
 
-Pad 8 was deliberately changed from an 8-beat loop to an **FX1 routing toggle**, because direct FX access is more useful in this workflow.
+**The pad's normal action happens immediately when pressed.** Holding an existing cue can therefore jump to it before deleting it. Holding an empty pad can create a cue and then delete it a second later.
 
----
+Release sooner to keep the cue. Changing modes or loading another track cancels a pending deletion.
 
-# Stems
+## Loop mode
 
-The Party Mix III's **Acapella** and **Instrumental** controls are integrated with Mixxx stems.
+Tap MODE from Hot Cue mode to enter Loop mode.
 
-The mapping is designed around Mixxx's four-stem model:
+| Pad | Action | Behavior |
+| --- | --- | --- |
+| 1 | **8-beat loop** | Starts an 8-beat loop at the current position, with timing following Mixxx's quantize settings. |
+| 2 | **Exit / Reloop** | Exits an active loop. Press again to return to the saved loop's start and repeat it. |
+| 3 | **Back to Intro Start** | Exits any active loop and jumps to an existing Intro Start marker. |
+| 4 | **Effect Unit 1 on/off for this deck** | Adds or removes this deck from Effect Unit 1. |
+| 5 | **Half loop length** | For example: 8 beats → 4 → 2 → 1. |
+| 6 | **Double loop length** | For example: 1 beat → 2 → 4 → 8. |
+| 7 | **Move loop back** | Moves the loop one beat backwards. |
+| 8 | **Move loop forward** | Moves the loop one beat forwards. |
 
-- Vocals
-- Bass
-- Drums
-- Other
+An 8-beat loop is two bars in a typical 4/4 track. Accurate track analysis and a correct beatgrid help loops stay in time.
 
-The Acapella/Instrumental controls are used to provide quick musical manipulation of the stems directly from the controller.
+Pad 2 has no effect if no valid loop exists. Pad 3 preserves play/pause state; if Intro Start is missing, it exits the loop but does not jump or create a marker.
 
-Their LEDs also provide feedback for the current state.
+Pads 7–8 move the repeating section by one beat. Long-press cue deletion does not apply in Loop mode.
 
-Stems mode itself is entered with:
+### Using the effect pad
 
-```text
-MODE + INSTRUMENTAL
-```
+Before using pad 4, choose and enable your effects in **Effect Unit 1** in Mixxx and set the wet/dry blend—the balance of original and processed sound.
 
-To leave Stems mode and return to the normal workflow:
+Pad 4 controls whether that deck goes through the effect unit. It does not select an effect or change its strength. Both decks share Effect Unit 1, but each deck can be switched into it independently.
 
-```text
-MODE → Hot Cue
-```
+The FILTER knob controls a separate Quick Effect.
 
----
+### Example
 
-# Sampler Mode
+1. Press pad 1 to start an 8-beat loop.
+2. Press pad 5 to shorten it to 4 beats, then again for 2 beats.
+3. Use pads 7–8 to reposition the loop if needed.
+4. Press pad 2 to exit and continue through the song.
+5. Press pad 2 again to jump back into the saved loop.
 
-Sampler mode is entered with:
+## Sampler mode
 
-```text
-MODE + ACAPELLA
-```
+**Enter with Shift + ACAPELLA:** hold MODE and press ACAPELLA.
 
-All eight physical pads are used for samples rather than only the first four.
+Samplers are separate players for short sounds, jingles, beats, or other tracks. The pads control these slots:
 
-The sampler banks are distributed between the two decks:
+| Pad | Left deck sampler | Right deck sampler |
+| --- | --- | --- |
+| 1 | 1 | 5 |
+| 2 | 2 | 6 |
+| 3 | 3 | 7 |
+| 4 | 4 | 8 |
+| 5 | 9 | 13 |
+| 6 | 10 | 14 |
+| 7 | 11 | 15 |
+| 8 | 12 | 16 |
 
-```text
-Deck 1 pads → Samplers 1–8
-Deck 2 pads → Samplers 9–16
-```
+| Sampler state | What a pad press does |
+| --- | --- |
+| Empty | Loads the currently selected library track. Press again to play it. |
+| Loaded and stopped | Plays from the beginning. |
+| Playing | Stops playback and returns to the beginning. |
 
-This provides direct access to all **16 Mixxx samplers** from the Party Mix III.
+You do not need to hold the pad while a sample plays. Each press alternates between starting and stopping; it does not pause and resume from the same position.
 
-To leave Sampler mode:
+Enable **16 sampler slots** in Mixxx to use all pads. Set sampler volume and outputs in Mixxx. Replace or unload samples through Mixxx's interface.
 
-```text
-MODE → Hot Cue
-```
+Tap MODE to return to Hot Cue mode. Any playing samples continue until stopped.
 
----
+## Stem mode
 
-# Fade FX Becomes AutoDJ
+**Enter with Shift + INSTRUMENTAL:** hold MODE and press INSTRUMENTAL.
 
-The physical **FADE FX** button is repurposed as an **AutoDJ toggle**.
+Stems are separate musical parts of a track. These controls expect four parts in this order: **Drums, Bass, Other instruments, Vocals**. Use a stem-enabled track and a Mixxx version that supports it; this mapping does not separate an ordinary track into stems.
 
-```text
-FADE FX → AutoDJ ON/OFF
-```
+| Pad | Action |
+| --- | --- |
+| 1 | Toggle Drums on/off |
+| 2 | Toggle Bass on/off |
+| 3 | Toggle Other instruments on/off |
+| 4 | Toggle Vocals on/off |
+| 5 | Solo Drums |
+| 6 | Solo Bass |
+| 7 | Solo Other instruments |
+| 8 | Solo Vocals |
 
-Its LED follows the actual Mixxx AutoDJ state.
+**Solo** means only that part is heard. Press its solo pad again while it is the only active stem to restore all four parts. Press a different solo pad to hear that part instead.
 
-For example:
+These controls switch parts between muted and full level. Restoring stems does not restore an earlier custom volume balance or mute combination.
 
-```text
-Press FADE FX
-    ↓
-AutoDJ ON
-    ↓
-FADE FX LED ON
-```
+Tap MODE to return to Hot Cue mode. Muted or soloed parts stay that way until you change them again.
 
-Press it again:
+## Acapella and Instrumental
 
-```text
-AutoDJ OFF
-    ↓
-FADE FX LED OFF
-```
+Press these buttons **without Shift** to change the sound of the track. They work in any pad mode.
 
-Importantly, this feedback is **two-way**.
+| Button | First press | Press again |
+| --- | --- | --- |
+| ACAPELLA | Keeps Vocals; mutes Drums, Bass, and Other instruments | Restores all four parts |
+| INSTRUMENTAL | Mutes Vocals; keeps Drums, Bass, and Other instruments | Restores all four parts |
 
-If AutoDJ is enabled or disabled from the Mixxx UI, the physical FADE FX LED is updated accordingly.
+Pressing the opposite button switches directly to its sound. For example, ACAPELLA followed by INSTRUMENTAL changes from vocals-only to music-only.
 
-The LED therefore represents the **actual AutoDJ state**, not merely the last controller button press.
+As with Stem pads, restored parts return to full level. If you also change stems using pads, another controller, or the screen, you may need a second press to reach the expected sound. Check the stem levels in Mixxx if unsure.
 
----
-
-# LOAD Buttons Become AutoDJ Queue Controls
-
-Normally the two LOAD buttons behave as expected:
-
-```text
-LOAD 1 → Load selected track into Deck 1
-LOAD 2 → Load selected track into Deck 2
-```
-
-This remains the behavior while AutoDJ is disabled.
-
-When AutoDJ is enabled, however, the buttons automatically change function:
-
-```text
-AutoDJ OFF
-
-LOAD 1 → Load selected track into Deck 1
-LOAD 2 → Load selected track into Deck 2
-```
-
-```text
-AutoDJ ON
-
-LOAD 1 → Add selected track to TOP of AutoDJ queue
-LOAD 2 → Add selected track to BOTTOM of AutoDJ queue
-```
-
-In practice this makes the buttons behave roughly as:
-
-```text
-LOAD 1 = "Play this soon"
-LOAD 2 = "Add this for later"
-```
-
-This is particularly useful during a party.
-
-AutoDJ can continue playing while you browse the normal Mixxx track library. When you find something you want to hear, simply press LOAD 1 or LOAD 2 without having to switch to the AutoDJ view.
-
-## AutoDJ Confirmation Blink
-
-When browsing the normal Tracks view, you may not be able to see whether a track was actually added to the AutoDJ queue.
-
-The mapping therefore provides physical confirmation.
-
-After adding a track to AutoDJ, the **FADE FX / AutoDJ LED briefly blinks** and then returns to displaying the actual AutoDJ state.
-
-This provides immediate visual confirmation that the command was executed.
-
----
-
-# LED Feedback
-
-LED feedback is treated as an important part of this mapping.
-
-The Party Mix III supports two useful illumination levels:
-
-```text
-DIM     → available / inactive
-BRIGHT  → active
-```
-
-rather than simply ON/OFF.
-
-Where practical, the mapping uses the dim state as background illumination and the bright state to represent an active function.
-
-Examples include:
-
-- AutoDJ state
-- Acapella/Instrumental state
-- Pad functions
-- FX routing
-- Selected pad mode
-
-This makes the controller considerably easier to operate in a dark room.
-
----
-
-# Why This Mapping Is "Opinionated"
-
-Several decisions in this mapping will not suit every DJ.
-
-In particular:
-
-- MODE only toggles **Hot Cue ↔ Loop**
-- Sampler is accessed with **MODE + ACAPELLA**
-- Stems are accessed with **MODE + INSTRUMENTAL**
-- MODE from Sampler/Stems returns directly to Hot Cue
-- FADE FX controls AutoDJ
-- LOAD buttons become AutoDJ queue controls while AutoDJ is running
-- Loop Pad 8 controls FX1 instead of an 8-beat loop
-- Hot Cue Pads 5–8 control Intro/Outro markers
-- All eight pads per deck are used for samplers
-- Acapella/Instrumental controls are integrated with Mixxx stems
-- Shifted pad MIDI messages are used for additional functionality
-
-These choices are optimized for a workflow where **fast access to Hot Cues, Loops, stems and AutoDJ is more useful than faithfully reproducing the controller's factory mapping**.
-
-If your workflow is similar, you may find the Party Mix III substantially more capable with this mapping than its limited control surface initially suggests.
-
----
-
-# Quick Reference
-
-## Mode Selection
-
-| Control | Function |
-|---|---|
-| MODE | Toggle Hot Cue ↔ Loop |
-| MODE + ACAPELLA | Sampler mode |
-| MODE + INSTRUMENTAL | Stems mode |
-| MODE while in Sampler/Stems | Return to Hot Cue |
+**With Shift, these buttons select a pad mode instead:** ACAPELLA opens Sampler mode; INSTRUMENTAL opens Stem mode.
 
 ## AutoDJ
 
-| Control | AutoDJ OFF | AutoDJ ON |
-|---|---|---|
-| FADE FX | Enable AutoDJ | Disable AutoDJ |
-| LOAD 1 | Load Deck 1 | Add to AutoDJ TOP |
-| LOAD 2 | Load Deck 2 | Add to AutoDJ BOTTOM |
+Press **FADE FX** to switch AutoDJ on or off. In this mapping, that button controls automatic DJ playback.
 
----
+Prepare your queue and choose your transition settings in Mixxx's AutoDJ panel. While AutoDJ is enabled:
 
-# Installation
+- **Left LOAD** adds the selected track to the **top** of the queue.
+- **Right LOAD** adds it to the **bottom** of the queue.
+- The FADE FX light indicates that AutoDJ is active.
+- Adding a track makes the light blink briefly as confirmation.
 
-Copy both mapping files into your Mixxx controller directory.
+Turn AutoDJ off with FADE FX to make the LOAD buttons load tracks directly into their decks again.
 
-The mapping consists of:
+## Button lights
 
-```text
-Numark-Party-Mix3.midi.xml
-Numark-Party-Mix3.scripts.js
-```
+Inactive buttons generally remain dimly lit. Brighter lights indicate an active function or a saved cue, depending on the mode.
 
-On macOS, the Mixxx controller mappings directory is typically located under your Mixxx user data directory.
+| Mode | What the pad lights represent |
+| --- | --- |
+| Hot Cue | Saved hot cues and intro/outro markers. |
+| Loop | Pad 1: active 8-beat loop. Pad 2: looping enabled. Pad 3: Intro Start exists. Pad 4: deck assigned to Effect Unit 1. Pads 5–8: looping enabled. |
+| Sampler | Sample playback. |
+| Stem | Top row: parts currently enabled. Bottom row: the part currently soloed. |
 
-After copying the files:
+Some lights may lag behind the actual state after startup, a mode change, or changes made on screen or another controller—particularly stem lights. When a light and the sound disagree, check Mixxx's on-screen controls.
 
-1. Restart Mixxx.
-2. Open **Preferences**.
-3. Select **Controllers**.
-4. Select the **Numark Party Mix III**.
-5. Choose/enable this mapping.
-6. Apply the settings.
+The mapping attempts to keep the decorative party lights off. Their response can vary with the controller.
 
----
+## Troubleshooting
 
-# Compatibility
+| Problem | What to check |
+| --- | --- |
+| Mapping is not listed | Copy both files into the user mapping folder and restart Mixxx. |
+| Some controls work but pads or jog wheels do not | Make sure both mapping files are present, correctly named, and this custom mapping is selected. |
+| LOAD adds a track to a queue | AutoDJ is enabled. Press FADE FX to turn it off. |
+| A cue disappears when held | Holding for one second deletes it. Use a short press to keep it. |
+| MODE never reaches Sampler or Stem | Hold MODE and press ACAPELLA for Sampler, or INSTRUMENTAL for Stem. |
+| Loop pad 3 does not jump | Set Intro Start first using pad 5 in Hot Cue mode. |
+| Loop pad 4 makes no audible difference | Choose and enable an effect in Effect Unit 1, and check its wet/dry blend. |
+| Lower-row sampler pads do not work | Enable 16 sampler slots in Mixxx. |
+| Stem controls do not isolate the expected sound | Check that the track supports stems and uses the expected Drums/Bass/Other/Vocals order. |
+| The song stays vocal-only after changing pad modes | Stem settings remain active. Restore the other parts using the stem controls. |
+| Headphones are silent | Check headphone output selection, PFL, headphone level, and the cue/main blend in Mixxx. |
+| Button lights do not match what you hear | Check the on-screen state in Mixxx. |
 
-This mapping was developed for:
+## Credits
 
-- **Numark Party Mix III / Party Mix MK3**
-- **Mixxx**
-
-It relies on Party Mix III-specific MIDI behavior, particularly the controller's native shifted pad layer.
-
-It should therefore **not be assumed to work unchanged with older Party Mix models**.
-
----
-
-# Customization
-
-This mapping is intentionally opinionated, but the JavaScript code can easily be modified to suit another workflow.
-
-For example, you could:
-
-- Restore an 8-beat loop to Loop Pad 8
-- Assign different shifted-pad functions
-- Change the AutoDJ LOAD button behavior
-- Change the Intro/Outro pad assignments
-- Use FADE FX for an actual effect again
-- Change how the sampler banks are distributed
-- Add additional LED feedback
-
-Feel free to fork the mapping and make it your own.
-
----
-
-# Contributions
-
-Bug fixes and improvements are welcome.
-
-When reporting an issue, please include:
-
-- Mixxx version
-- Operating system
-- Exact controller model
-- Relevant Mixxx controller log output
-- MIDI messages if the issue appears to be controller-specific
-
-Pull requests are welcome as well.
+Based on the Party Mix mapping credited to **olaf**.
